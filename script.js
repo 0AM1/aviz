@@ -2,7 +2,7 @@ let audio, analyser, source, frequencyData;
 let scene, camera, renderer, particles;
 
 function init() {
-    // Audio setup
+    // Audio setup remains the same
     audio = new Audio('track1.mp3');
     audio.loop = true;
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -12,29 +12,31 @@ function init() {
     analyser.connect(audioCtx.destination);
     frequencyData = new Uint8Array(analyser.frequencyBinCount);
 
-    // Three.js setup
+    // Three.js setup with BufferGeometry
     scene = new THREE.Scene();
     camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
     renderer = new THREE.WebGLRenderer();
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(renderer.domElement);
 
-    // Particles for visualization
-    const geometry = new THREE.Geometry();
+    // Particles for visualization using BufferGeometry
+    const positions = new Float32Array(1000 * 3);
     for (let i = 0; i < 1000; i++) {
-        let vertex = new THREE.Vector3();
-        vertex.x = Math.random() * 2 - 1;
-        vertex.y = Math.random() * 2 - 1;
-        vertex.z = Math.random() * 2 - 1;
-        geometry.vertices.push(vertex);
+        positions[i * 3] = Math.random() * 2 - 1;  // x
+        positions[i * 3 + 1] = Math.random() * 2 - 1; // y
+        positions[i * 3 + 2] = Math.random() * 2 - 1; // z
     }
+
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+
     const material = new THREE.PointsMaterial({ size: 0.02, color: 0x00ff00 });
     particles = new THREE.Points(geometry, material);
     scene.add(particles);
 
     camera.position.z = 5;
 
-    // UI controls
+    // UI controls remain the same
     document.getElementById('playPause').onclick = () => {
         if (audio.paused) {
             audio.play();
@@ -54,10 +56,11 @@ function init() {
 function animate() {
     requestAnimationFrame(animate);
     analyser.getByteFrequencyData(frequencyData);
-    for (let i = 0; i < particles.geometry.vertices.length; i++) {
-        particles.geometry.vertices[i].y = (frequencyData[i % frequencyData.length] / 256) * 2 - 1;
+    const positions = particles.geometry.attributes.position.array;
+    for (let i = 0; i < positions.length; i += 3) {
+        positions[i + 1] = (frequencyData[(i / 3) % frequencyData.length] / 256) * 2 - 1;
     }
-    particles.geometry.verticesNeedUpdate = true;
+    particles.geometry.attributes.position.needsUpdate = true;
     renderer.render(scene, camera);
 }
 
