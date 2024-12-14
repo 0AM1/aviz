@@ -52,6 +52,30 @@ function init() {
 
     animate();
 }
+function startAudio() {
+    if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        audio = new Audio();
+        audio.src = 'track1.mp3';
+        audio.loop = true;
+        source = audioCtx.createMediaElementSource(audio);
+        analyser = audioCtx.createAnalyser();
+        source.connect(analyser);
+        analyser.connect(audioCtx.destination);
+        frequencyData = new Uint8Array(analyser.frequencyBinCount);
+    }
+    
+    if (audio.paused) {
+        audio.play();
+    } else {
+        audio.pause();
+    }
+    animate();
+}
+function switchTrack() {
+    audio.src = audio.src.includes('track1') ? 'track2.mp3' : 'track1.mp3';
+    if (!audio.paused) audio.play();
+}
 
 function animate() {
     requestAnimationFrame(animate);
